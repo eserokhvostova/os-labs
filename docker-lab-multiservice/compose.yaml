@@ -1,0 +1,43 @@
+services:
+  backend-1:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    environment:
+      PORT: "9000"
+      SERVER_NAME: "backend-1"
+
+  backend-2:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    environment:
+      PORT: "9000"
+      SERVER_NAME: "backend-2"
+
+  balancer:
+    build:
+      context: .
+      dockerfile: apps/balancer/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      BACKENDS: "backend-1:9000,backend-2:9000"
+    depends_on:
+      - backend-1
+      - backend-2
+
+  loadgen:
+    build:
+      context: .
+      dockerfile: apps/loadgen/Dockerfile
+    environment:
+      TARGET_HOST: "balancer"
+      TARGET_PORT: "8080"
+      REQUEST_COUNT: "100"
+      OUTPUT_FILE: "/results/result.csv"
+    volumes:
+      - ./results:/results
+    depends_on:
+      - balancer
